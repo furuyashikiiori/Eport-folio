@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>{% block title %}eポートフォリオ{% endblock %}</title>
+    <link
+      href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="{{ url_for('static', filename='eportfolio.css') }}"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="navbar navbar-inverse" role="navigation">
+      <div class="container">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="{{ url_for('index') }}"
+            >eポートフォリオ</a
+          >
+        </div>
+        <div class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+            <li><a href="{{ url_for('index') }}">ホーム</a></li>
+            {% if 'user_id' not in session %}
+            <li><a href="{{ url_for('register') }}">登録</a></li>
+            <li><a href="{{ url_for('login') }}">ログイン</a></li>
+            {% else %}
+            <li><a href="{{ url_for('portfolio') }}">eポートフォリオ</a></li>
+            <li><a href="{{ url_for('logout') }}">ログアウト</a></li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="container">
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %} {% for category, message in messages %}
+      <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %} {% endif %} {% endwith %} {% block content %}{% endblock %}
+    </div>
+    <script src="{{ url_for('static', filename='eportfolio.js') }}"></script>
+  </body>
+</html>

@@ -1,0 +1,20 @@
+{% extends "base.html" %} {% block title %}eポートフォリオ{% endblock %} {%
+block content %}
+<div class="page-header"><h1>eポートフォリオ</h1></div>
+<form action="{{ url_for('portfolio') }}" method="POST">
+  <div class="form-group">
+    {{ form.title.label }} {{ form.title(class="form-control") }}
+  </div>
+  <div class="form-group">
+    {{ form.content.label }} {{ form.content(class="form-control") }}
+  </div>
+  {{ form.csrf_token }} {{ form.submit(class="btn btn-primary") }}
+</form>
+{% if portfolios %}
+<h2>あなたのポートフォリオ</h2>
+<ul>
+  {% for portfolio in portfolios %}
+  <li>{{ portfolio.title }} - {{ portfolio.created_at }}</li>
+  {% endfor %}
+</ul>
+{% endif %} {% endblock %}
