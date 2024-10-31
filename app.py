@@ -1,5 +1,5 @@
 from flask import Flask, render_template, redirect, url_for, session, request, flash
-from forms import RegistrationForm, LoginForm, PortfolioForm, ProfileEditForm
+from forms import RegistrationForm, LoginForm, PortfolioForm, ProfileEditForm, SearchForm, CommentForm
 from models import User, Portfolio
 from werkzeug.security import generate_password_hash, check_password_hash
 import sqlite3
@@ -39,6 +39,18 @@ def create_tables():
             FOREIGN KEY (user_id) REFERENCES user (id)
         )
     ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS comments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            portfolio_id INTEGER,
+            teacher_id INTEGER,
+            comment TEXT,
+            rating INTEGER,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (portfolio_id) REFERENCES portfolio (id),
+            FOREIGN KEY (teacher_id) REFERENCES user (id)
+        )
+    ''')
     conn.commit()
     conn.close()
 
@@ -69,6 +81,29 @@ def register():
         return redirect(url_for('login'))
     return render_template('register.html', form=form)
 
+# @app.route('/login', methods=['GET', 'POST'])
+# def login():
+#     form = LoginForm()
+#     if form.validate_on_submit():
+#         username = form.username.data
+#         password = form.password.data
+
+#         conn = get_db_connection()
+#         cursor = conn.cursor()
+#         cursor.execute("SELECT * FROM user WHERE username = ?", (username,))
+#         user_row = cursor.fetchone()
+#         conn.close()
+
+#         if user_row and check_password_hash(user_row['password'], password):
+#             user = User(user_row['id'], user_row['username'], user_row['password'], user_row['role'])
+#             session['user_id'] = user.id
+#             session['role'] = user.role
+#             flash('Login successful!', 'success')
+#             return redirect(url_for('index'))
+#         else:
+#             flash('Login failed. Check your username and/or password.', 'danger')
+#     return render_template('login.html', form=form)
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
@@ -87,9 +122,14 @@ def login():
             session['user_id'] = user.id
             session['role'] = user.role
             flash('Login successful!', 'success')
-            return redirect(url_for('index'))
+
+            if user.role == 'teacher':
+                return redirect(url_for('teacher_dashboard'))
+            else:
+                return redirect(url_for('index'))
         else:
             flash('Login failed. Check your username and/or password.', 'danger')
+
     return render_template('login.html', form=form)
 
 @app.route('/logout')
@@ -103,6 +143,7 @@ def portfolio():
     if 'user_id' not in session:
         flash('You need to be logged in to view this page.', 'danger')
         return redirect(url_for('login'))
+
     form = PortfolioForm()
     if form.validate_on_submit():
         title = form.title.data
@@ -128,6 +169,26 @@ def portfolio():
                   for row in portfolio_rows]
 
     return render_template('portfolio.html', form=form, portfolios=portfolios)
+
+
+# @app.route('/portfolio/<int:portfolio_id>')
+# def show_portfolio(portfolio_id):
+#     if 'user_id' not in session:
+#         flash('You need to be logged in to view this page.', 'danger')
+#         return redirect(url_for('login'))
+
+#     conn = get_db_connection()
+#     cursor = conn.cursor()
+#     cursor.execute("SELECT * FROM portfolio WHERE id = ?", (portfolio_id,))
+#     portfolio_row = cursor.fetchone()
+#     conn.close()
+
+#     if portfolio_row:
+#         portfolio = Portfolio(portfolio_row['id'], portfolio_row['user_id'], portfolio_row['title'], portfolio_row['content'], portfolio_row['created_at'])
+#         return render_template('portfolio_detail.html', portfolio=portfolio)
+#     else:
+#         flash('Portfolio not found.', 'danger')
+#         return redirect(url_for('portfolio'))
 
 @app.route('/profile')
 def profile():
@@ -200,6 +261,107 @@ def edit_profile():
         conn.close()
         flash('User not found.', 'danger')
         return redirect(url_for('profile'))
+    
+@app.route('/teacher_dashboard', methods=['GET', 'POST'])
+def teacher_dashboard():
+    if 'user_id' not in session or session.get('role') != 'teacher':
+        flash('You need to be logged in as a teacher to view this page.', 'danger')
+        return redirect(url_for('login'))
+
+    form = SearchForm()
+    students = []
+    
+    if form.validate_on_submit():
+        search_query = form.search_query.data
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM user WHERE role = 'student' AND username LIKE ?", ('%' + search_query + '%',))
+        students = cursor.fetchall()
+        conn.close()
+
+    return render_template('teacher_dashboard.html', form=form, students=students)
+
+# @app.route('/view_portfolio/<int:student_id>')
+# def view_portfolio(student_id):
+#     if 'user_id' not in session or session.get('role') != 'teacher':
+#         flash('You need to be logged in as a teacher to view this page.', 'danger')
+#         return redirect(url_for('login'))
+
+#     conn = get_db_connection()
+#     cursor = conn.cursor()
+#     cursor.execute("SELECT * FROM user WHERE id = ?", (student_id,))
+#     student = cursor.fetchone()
+
+#     if not student:
+#         flash('Student not found.', 'danger')
+#         return redirect(url_for('teacher_dashboard'))
+
+#     cursor.execute("SELECT * FROM portfolio WHERE user_id = ?", (student_id,))
+#     portfolio_rows = cursor.fetchall()
+#     conn.close()
+
+#     portfolios = [Portfolio(row['id'], row['user_id'], row['title'], row['content'], row['created_at'])
+#                   for row in portfolio_rows]
+
+#     return render_template('view_portfolio.html', student=student, portfolios=portfolios)
+@app.route('/view_portfolio/<int:student_id>')
+def view_portfolio(student_id):
+    if 'user_id' not in session or session.get('role') != 'teacher':
+        flash('You need to be logged in as a teacher to view this page.', 'danger')
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM user WHERE id = ?", (student_id,))
+    student = cursor.fetchone()
+
+    if not student:
+        flash('Student not found.', 'danger')
+        return redirect(url_for('teacher_dashboard'))
+
+    cursor.execute("SELECT * FROM portfolio WHERE user_id = ?", (student_id,))
+    portfolio_rows = cursor.fetchall()
+    conn.close()
+
+    portfolios = [Portfolio(row['id'], row['user_id'], row['title'], row['content'], row['created_at'])
+                  for row in portfolio_rows]
+
+    return render_template('view_portfolio.html', student=student, portfolios=portfolios)
+
+@app.route('/portfolio/<int:portfolio_id>', methods=['GET', 'POST'])
+def show_portfolio_with_comment(portfolio_id):
+    if 'user_id' not in session:
+        flash('You need to be logged in to view this page.', 'danger')
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM portfolio WHERE id = ?", (portfolio_id,))
+    portfolio_row = cursor.fetchone()
+    
+    if not portfolio_row:
+        flash('Portfolio not found.', 'danger')
+        conn.close()
+        return redirect(url_for('portfolio'))
+        
+    portfolio = Portfolio(portfolio_row['id'], portfolio_row['user_id'], portfolio_row['title'], portfolio_row['content'], portfolio_row['created_at'])
+    
+    cursor.execute("SELECT * FROM comments WHERE portfolio_id = ?", (portfolio_id,))
+    comments = cursor.fetchall()
+    
+    form = CommentForm()
+    if form.validate_on_submit():
+        comment_text = form.comment.data
+        rating = form.rating.data
+        cursor.execute("INSERT INTO comments (portfolio_id, teacher_id, comment, rating) VALUES (?, ?, ?, ?)",
+                       (portfolio_id, session['user_id'], comment_text, rating))
+        conn.commit()
+        flash('Comment added!', 'success')
+        return redirect(url_for('show_portfolio_with_comment', portfolio_id=portfolio_id))
+    
+    conn.close()
+
+    return render_template('portfolio_detail.html', portfolio=portfolio, comments=comments, form=form)
 
 if __name__ == '__main__':
     app.run(debug=True, host='127.0.0.1')  # ポートオプションもデフォルトの5000を使用

@@ -1,22 +1,24 @@
-{% extends "base.html" %} {% block title %}eポートフォリオ{% endblock %} {%
-block content %}
-<div class="page-header"><h1>eポートフォリオ</h1></div>
-<form action="{{ url_for('portfolio') }}" method="POST">
-  <div class="form-group">
-    {{ form.title.label }} {{ form.title(class="form-control") }}
-  </div>
-  <div class="form-group">
-    {{ form.content.label }} {{ form.content(class="form-control") }}
-  </div>
-  {{ form.csrf_token }} {{ form.submit(class="btn btn-primary") }}
-</form>
-{% if portfolios %}
-<h2>あなたのポートフォリオ</h2>
-<ul>
+{% extends "base.html" %} {% block title %}ホーム{% endblock %} {% block content
+%}
+<div class="container">
+  <h1>Portfolio</h1>
+  <form method="POST" action="{{ url_for('portfolio') }}">
+    {{ form.hidden_tag() }}
+    <div>{{ form.title.label }} {{ form.title }}</div>
+    <div>{{ form.content.label }} {{ form.content }}</div>
+    <div>{{ form.submit() }}</div>
+  </form>
   {% for portfolio in portfolios %}
-  <li>
-    {{ portfolio.title }} - {{portfolio.content}}- {{ portfolio.created_at }}
-  </li>
+  <div class="portfolio">
+    <h2>
+      <a
+        href="{{ url_for('show_portfolio_with_comment', portfolio_id=portfolio.id) }}"
+        >{{ portfolio.title }}</a
+      >
+    </h2>
+    <p>{{ portfolio.created_at }}</p>
+  </div>
   {% endfor %}
-</ul>
-{% endif %} {% endblock %}
+  <a href="{{ url_for('index') }}">Back to Home</a>
+</div>
+{% endblock %}
