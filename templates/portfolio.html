@@ -14,7 +14,9 @@ block content %}
 <h2>あなたのポートフォリオ</h2>
 <ul>
   {% for portfolio in portfolios %}
-  <li>{{ portfolio.title }} - {{ portfolio.created_at }}</li>
+  <li>
+    {{ portfolio.title }} - {{portfolio.content}}- {{ portfolio.created_at }}
+  </li>
   {% endfor %}
 </ul>
 {% endif %} {% endblock %}

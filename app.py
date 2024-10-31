@@ -1,5 +1,5 @@
 from flask import Flask, render_template, redirect, url_for, session, request, flash
-from forms import RegistrationForm, LoginForm, PortfolioForm
+from forms import RegistrationForm, LoginForm, PortfolioForm, ProfileEditForm
 from models import User, Portfolio
 from werkzeug.security import generate_password_hash, check_password_hash
 import sqlite3
@@ -21,7 +21,12 @@ def create_tables():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT NOT NULL UNIQUE,
             password TEXT NOT NULL,
-            role TEXT NOT NULL
+            role TEXT NOT NULL,
+            student_number TEXT,
+            name TEXT,
+            grade TEXT,
+            graduation_year TEXT,
+            bio TEXT
         )
     ''')
     cursor.execute('''
@@ -124,5 +129,77 @@ def portfolio():
 
     return render_template('portfolio.html', form=form, portfolios=portfolios)
 
+@app.route('/profile')
+def profile():
+    if 'user_id' not in session:
+        flash('You need to be logged in to view this page.', 'danger')
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM user WHERE id = ?", (session['user_id'],))
+    user_row = cursor.fetchone()
+    conn.close()
+
+    if user_row:
+        user_dict = dict(user_row)
+        user = User(
+            user_dict['id'], user_dict['username'], user_dict['password'], user_dict['role'],
+            user_dict.get('student_number', ''), user_dict.get('name', ''), user_dict.get('grade', ''),
+            user_dict.get('graduation_year', ''), user_dict.get('bio', '')
+        )
+        return render_template('profile.html', user=user)
+    else:
+        flash('User not found.', 'danger')
+        return redirect(url_for('index'))
+
+@app.route('/edit_profile', methods=['GET', 'POST'])
+def edit_profile():
+    if 'user_id' not in session:
+        flash('You need to be logged in to view this page.', 'danger')
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM user WHERE id = ?", (session['user_id'],))
+    user_row = cursor.fetchone()
+
+    form = ProfileEditForm()
+
+    if request.method == 'POST' and form.validate_on_submit():
+        student_number = form.student_number.data
+        name = form.name.data
+        grade = form.grade.data
+        graduation_year = form.graduation_year.data
+        bio = form.bio.data
+
+        cursor.execute('''
+            UPDATE user
+            SET student_number = ?, name = ?, grade = ?, graduation_year = ?, bio = ?
+            WHERE id = ?
+        ''', (student_number, name, grade, graduation_year, bio, session['user_id']))
+        conn.commit()
+        conn.close()
+
+        flash('Profile updated successfully', 'success')
+        return redirect(url_for('profile'))
+
+    if user_row:
+        user_dict = dict(user_row)
+        user = User(user_dict['id'], user_dict['username'], user_dict['password'], user_dict['role'],
+                     user_dict.get('student_number', ''), user_dict.get('name', ''), user_dict.get('grade', ''),
+                     user_dict.get('graduation_year', ''), user_dict.get('bio', ''))
+        form.student_number.data = user.student_number
+        form.name.data = user.name
+        form.grade.data = user.grade
+        form.graduation_year.data = user.graduation_year
+        form.bio.data = user.bio
+        conn.close()
+        return render_template('edit_profile.html', form=form, user=user)
+    else:
+        conn.close()
+        flash('User not found.', 'danger')
+        return redirect(url_for('profile'))
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='127.0.0.1')  # ポートオプションもデフォルトの5000を使用

@@ -1,0 +1,17 @@
+l {% extends "base.html" %} {% block title %}プロフィール{% endblock %} {% block
+content %}
+<div class="page-header"><h1>プロフィール</h1></div>
+<div class="container">
+  <p><strong>ID:</strong> {{ user.id }}</p>
+  <p><strong>ユーザーネーム:</strong> {{ user.username }}</p>
+  <p><strong>生徒・教師:</strong> {{ user.role }}</p>
+  <p><strong>学籍番号:</strong> {{ user.student_number }}</p>
+  <p><strong>名前:</strong> {{ user.name }}</p>
+  <p><strong>学年:</strong> {{ user.grade }}</p>
+  <p><strong>卒業年度:</strong> {{ user.graduation_year }}</p>
+  <p><strong>自由記述:</strong> {{ user.bio }}</p>
+  <a href="{{ url_for('edit_profile') }}">プロフィール編集</a>
+  <br />
+</div>
+
+{% endblock %}

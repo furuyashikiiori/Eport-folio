@@ -1,0 +1,32 @@
+l {% extends "base.html" %} {% block title %}登録{% endblock %} {% block content
+%}
+<div class="container">
+  <h1>Edit Profile</h1>
+  <form method="post">
+    {{ form.hidden_tag() }}
+    <div class="form-group">
+      <label for="student_number">学籍番号(2******)</label>
+      {{ form.student_number(class_="form-control") }}
+    </div>
+    <div class="form-group">
+      <label for="name">名前(フルネーム) </label>
+      {{ form.name(class_="form-control") }}
+    </div>
+    <div class="form-group">
+      <label for="grade">学年(*年)</label>
+      {{ form.grade(class_="form-control") }}
+    </div>
+    <div class="form-group">
+      <label for="graduation_year">卒業予定年(20**)</label>
+      {{ form.graduation_year(class_="form-control") }}
+    </div>
+    <div class="form-group">
+      <label for="bio">自由記述</label>
+      {{ form.bio(class_="form-control") }}
+    </div>
+    <button type="submit" class="btn btn-primary">変更を保存</button>
+  </form>
+  <a href="{{ url_for('profile') }}">プロフィールに戻る</a>
+</div>
+
+{% endblock %}

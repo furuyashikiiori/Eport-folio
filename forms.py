@@ -17,3 +17,11 @@ class PortfolioForm(FlaskForm):
     title = StringField('Title', validators=[DataRequired(), Length(max=128)])
     content = TextAreaField('Content', validators=[DataRequired()])
     submit = SubmitField('Save')
+
+class ProfileEditForm(FlaskForm):
+    student_number = StringField('Student Number', validators=[Length(max=20)])
+    name = StringField('Name', validators=[Length(max=100)])
+    grade = StringField('Grade', validators=[Length(max=10)])
+    graduation_year = StringField('Graduation Year', validators=[Length(max=4)])
+    bio = TextAreaField('Bio', validators=[Length(max=500)])
+    submit = SubmitField('Save Changes')
