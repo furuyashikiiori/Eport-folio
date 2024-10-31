@@ -4,6 +4,25 @@
   <h1>{{ portfolio.title }}</h1>
   <p><strong>Created at:</strong> {{ portfolio.created_at }}</p>
   <div>{{ portfolio.content }}</div>
-  <a href="{{ url_for('portfolio') }}">ポートフォリオに戻る</a>
+
+  <h2>Comments and Ratings</h2>
+  <form
+    method="POST"
+    action="{{ url_for('show_portfolio_with_comment', portfolio_id=portfolio.id) }}"
+  >
+    {{ form.hidden_tag() }} {{ form.comment.label }} {{ form.comment() }} {{
+    form.rating.label }} {{ form.rating() }} {{ form.submit() }}
+  </form>
+
+  <ul>
+    {% for comment in comments %}
+    <li>
+      <strong>Rating:</strong> {{ comment['rating'] }} <br />
+      {{ comment['comment'] }}
+    </li>
+    {% endfor %}
+  </ul>
+
+  <a href="{{ url_for('portfolio') }}">Back to Portfolio List</a>
 </div>
 {% endblock %}
