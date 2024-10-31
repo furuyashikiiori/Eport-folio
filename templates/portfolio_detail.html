@@ -1,0 +1,9 @@
+{% extends "base.html" %} {% block title %}ホーム{% endblock %} {% block content
+%}
+<div class="container">
+  <h1>{{ portfolio.title }}</h1>
+  <p><strong>Created at:</strong> {{ portfolio.created_at }}</p>
+  <div>{{ portfolio.content }}</div>
+  <a href="{{ url_for('portfolio') }}">ポートフォリオに戻る</a>
+</div>
+{% endblock %}

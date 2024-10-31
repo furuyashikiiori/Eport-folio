@@ -129,6 +129,25 @@ def portfolio():
 
     return render_template('portfolio.html', form=form, portfolios=portfolios)
 
+@app.route('/portfolio/<int:portfolio_id>')
+def show_portfolio(portfolio_id):
+    if 'user_id' not in session:
+        flash('You need to be logged in to view this page.', 'danger')
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM portfolio WHERE id = ?", (portfolio_id,))
+    portfolio_row = cursor.fetchone()
+    conn.close()
+
+    if portfolio_row:
+        portfolio = Portfolio(portfolio_row['id'], portfolio_row['user_id'], portfolio_row['title'], portfolio_row['content'], portfolio_row['created_at'])
+        return render_template('portfolio_detail.html', portfolio=portfolio)
+    else:
+        flash('Portfolio not found.', 'danger')
+        return redirect(url_for('portfolio'))
+
 @app.route('/profile')
 def profile():
     if 'user_id' not in session:
