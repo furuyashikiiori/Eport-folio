@@ -16,9 +16,7 @@
     <div class="navbar navbar-inverse" role="navigation">
       <div class="container">
         <div class="navbar-header">
-          <a class="navbar-brand" href="{{ url_for('index') }}"
-            >eポートフォリオ(教師)</a
-          >
+          <a class="navbar-brand">eポートフォリオ(教師)</a>
         </div>
         <div class="navbar-collapse collapse">
           <ul class="nav navbar-nav">
@@ -30,6 +28,7 @@
             <li>
               <a href="{{ url_for('teacher_dashboard') }}">ダッシュボード</a>
             </li>
+            <li><a href="{{ url_for('students_list') }}">生徒一覧</a></li>
             <li><a href="{{ url_for('logout') }}">ログアウト</a></li>
             {% endif %}
           </ul>

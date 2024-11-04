@@ -2,27 +2,20 @@
 %}
 <div class="container">
   <h1>{{ portfolio.title }}</h1>
-  <p><strong>Created at:</strong> {{ portfolio.created_at }}</p>
+  <p><strong>作成日:</strong> {{ portfolio.created_at }}</p>
   <div>{{ portfolio.content }}</div>
 
-  <h2>Comments and Ratings</h2>
-  <form
-    method="POST"
-    action="{{ url_for('show_portfolio_with_comment', portfolio_id=portfolio.id) }}"
-  >
-    {{ form.hidden_tag() }} {{ form.comment.label }} {{ form.comment() }} {{
-    form.rating.label }} {{ form.rating() }} {{ form.submit() }}
-  </form>
+  <h2>コメントと評価</h2>
 
   <ul>
     {% for comment in comments %}
     <li>
-      <strong>Rating:</strong> {{ comment['rating'] }} <br />
+      <strong>評価:</strong> {{ comment['rating'] }} <br />
       {{ comment['comment'] }}
     </li>
     {% endfor %}
   </ul>
 
-  <a href="{{ url_for('portfolio') }}">Back to Portfolio List</a>
+  <a href="{{ url_for('portfolio') }}">ポートフォリオ一覧に戻る</a>
 </div>
 {% endblock %}

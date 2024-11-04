@@ -281,6 +281,20 @@ def teacher_dashboard():
 
     return render_template('teacher_dashboard.html', form=form, students=students)
 
+@app.route('/students_list')
+def students_list():
+    if 'user_id' not in session or session.get('role') != 'teacher':
+        flash('You need to be logged in as a teacher to view this page.', 'danger')
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM user WHERE role = 'student'")
+    students = cursor.fetchall()
+    conn.close()
+
+    return render_template('students_list.html', students=students)
+
 # @app.route('/view_portfolio/<int:student_id>')
 # def view_portfolio(student_id):
 #     if 'user_id' not in session or session.get('role') != 'teacher':
