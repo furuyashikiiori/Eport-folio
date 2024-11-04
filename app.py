@@ -328,6 +328,41 @@ def view_portfolio(student_id):
 
     return render_template('view_portfolio.html', student=student, portfolios=portfolios)
 
+# @app.route('/portfolio/<int:portfolio_id>', methods=['GET', 'POST'])
+# def show_portfolio_with_comment(portfolio_id):
+#     if 'user_id' not in session:
+#         flash('You need to be logged in to view this page.', 'danger')
+#         return redirect(url_for('login'))
+
+#     conn = get_db_connection()
+#     cursor = conn.cursor()
+#     cursor.execute("SELECT * FROM portfolio WHERE id = ?", (portfolio_id,))
+#     portfolio_row = cursor.fetchone()
+    
+#     if not portfolio_row:
+#         flash('Portfolio not found.', 'danger')
+#         conn.close()
+#         return redirect(url_for('portfolio'))
+        
+#     portfolio = Portfolio(portfolio_row['id'], portfolio_row['user_id'], portfolio_row['title'], portfolio_row['content'], portfolio_row['created_at'])
+    
+#     cursor.execute("SELECT * FROM comments WHERE portfolio_id = ?", (portfolio_id,))
+#     comments = cursor.fetchall()
+    
+#     form = CommentForm()
+#     if form.validate_on_submit():
+#         comment_text = form.comment.data
+#         rating = form.rating.data
+#         cursor.execute("INSERT INTO comments (portfolio_id, teacher_id, comment, rating) VALUES (?, ?, ?, ?)",
+#                        (portfolio_id, session['user_id'], comment_text, rating))
+#         conn.commit()
+#         flash('Comment added!', 'success')
+#         return redirect(url_for('show_portfolio_with_comment', portfolio_id=portfolio_id))
+    
+#     conn.close()
+
+#     return render_template('portfolio_detail.html', portfolio=portfolio, comments=comments, form=form)
+
 @app.route('/portfolio/<int:portfolio_id>', methods=['GET', 'POST'])
 def show_portfolio_with_comment(portfolio_id):
     if 'user_id' not in session:
@@ -361,7 +396,12 @@ def show_portfolio_with_comment(portfolio_id):
     
     conn.close()
 
-    return render_template('portfolio_detail.html', portfolio=portfolio, comments=comments, form=form)
+    if session.get('role') == 'teacher':
+        template = 'teacher_portfolio_detail.html'
+    else:
+        template = 'portfolio_detail.html'
+
+    return render_template(template, portfolio=portfolio, comments=comments, form=form)
 
 if __name__ == '__main__':
     app.run(debug=True, host='127.0.0.1')  # ポートオプションもデフォルトの5000を使用

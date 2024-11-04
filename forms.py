@@ -27,10 +27,10 @@ class ProfileEditForm(FlaskForm):
     submit = SubmitField('Save Changes')
 
 class SearchForm(FlaskForm):
-    search_query = StringField('Search Student', validators=[DataRequired()])
+    search_query = StringField('name', validators=[DataRequired()])
     submit = SubmitField('Search')
 
 class CommentForm(FlaskForm):
     comment = TextAreaField('Comment', validators=[DataRequired()])
-    rating = SelectField('Rating', choices=[('1', '1'), ('2', '2'), ('3', '3'), ('4', '4'), ('5', '5')], validators=[DataRequired()])
+    rating = SelectField('Rating', choices=[('★☆☆☆☆', '1'), ('★★☆☆☆', '2'), ('★★★☆☆', '3'), ('★★★★☆', '4'), ('★★★★★', '5')], validators=[DataRequired()])
     submit = SubmitField('Submit')
