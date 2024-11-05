@@ -1,9 +1,28 @@
 {% extends "base.html" %} {% block title %}ホーム{% endblock %} {% block content
 %}
 <div class="container">
-  <h1>{{ portfolio.title }}</h1>
-  <p><strong>作成日:</strong> {{ portfolio.created_at }}</p>
-  <div>{{ portfolio.content }}</div>
+  <div class="portfolio-container">
+    <h1>{{ portfolio.title }}</h1>
+    <p><strong>作成日:</strong> {{ portfolio.created_at }}</p>
+    <div class="portfolio-container-content">{{ portfolio.content }}</div>
+  </div>
+
+  <!-- 編集機能 -->
+  {% if session['user_id'] == portfolio.user_id %}
+  <div>
+    <a
+      class="portfolio_edit"
+      href="{{ url_for('edit_portfolio', portfolio_id=portfolio.id) }}"
+      >編集</a
+    >
+    <a
+      class="portfolio_delete"
+      href="{{ url_for('delete_portfolio', portfolio_id=portfolio.id) }}"
+      onclick="return confirm('本当にこのポートフォリオを削除しますか？');"
+      >削除</a
+    >
+  </div>
+  {% endif %}
 
   <h2>コメントと評価</h2>
 

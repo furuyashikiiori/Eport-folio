@@ -417,5 +417,55 @@ def show_portfolio_with_comment(portfolio_id):
 
     return render_template(template, portfolio=portfolio, comments=comments, form=form)
 
+@app.route('/portfolio/<int:portfolio_id>/edit', methods=['GET', 'POST'])
+def edit_portfolio(portfolio_id):
+    if 'user_id' not in session:
+        flash('You need to be logged in to edit a portfolio.', 'danger')
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM portfolio WHERE id = ? AND user_id = ?", (portfolio_id, session['user_id']))
+    portfolio_row = cursor.fetchone()
+    
+    if not portfolio_row:
+        flash('Portfolio not found or you do not have permission to edit.', 'danger')
+        conn.close()
+        return redirect(url_for('portfolio'))
+
+    if request.method == 'POST':
+        title = request.form['title']
+        content = request.form['content']
+        cursor.execute("UPDATE portfolio SET title = ?, content = ? WHERE id = ?", (title, content, portfolio_id))
+        conn.commit()
+        conn.close()
+        flash('Portfolio has been updated!', 'success')
+        return redirect(url_for('show_portfolio_with_comment', portfolio_id=portfolio_id))
+    
+    conn.close()
+    return render_template('edit_portfolio.html', portfolio=portfolio_row)
+
+@app.route('/portfolio/<int:portfolio_id>/delete')
+def delete_portfolio(portfolio_id):
+    if 'user_id' not in session:
+        flash('You need to be logged in to delete a portfolio.', 'danger')
+        return redirect(url_for('login'))
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM portfolio WHERE id = ? AND user_id = ?", (portfolio_id, session['user_id']))
+    portfolio_row = cursor.fetchone()
+    
+    if not portfolio_row:
+        flash('Portfolio not found or you do not have permission to delete.', 'danger')
+        conn.close()
+        return redirect(url_for('portfolio'))
+
+    cursor.execute("DELETE FROM portfolio WHERE id = ?", (portfolio_id,))
+    conn.commit()
+    conn.close()
+    flash('Portfolio has been deleted!', 'success')
+    return redirect(url_for('portfolio'))
+
 if __name__ == '__main__':
     app.run(debug=True, host='127.0.0.1')  # ポートオプションもデフォルトの5000を使用

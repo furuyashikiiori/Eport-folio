@@ -31,6 +31,6 @@ class SearchForm(FlaskForm):
     submit = SubmitField('検索')
 
 class CommentForm(FlaskForm):
-    comment = TextAreaField('Comment', validators=[DataRequired()])
-    rating = SelectField('Rating', choices=[('★☆☆☆☆', '1'), ('★★☆☆☆', '2'), ('★★★☆☆', '3'), ('★★★★☆', '4'), ('★★★★★', '5')], validators=[DataRequired()])
-    submit = SubmitField('Submit')
+    comment = TextAreaField('コメント', validators=[DataRequired()])
+    rating = SelectField('評価', choices=[('★☆☆☆☆', '1'), ('★★☆☆☆', '2'), ('★★★☆☆', '3'), ('★★★★☆', '4'), ('★★★★★', '5')], validators=[DataRequired()])
+    submit = SubmitField('送信')
