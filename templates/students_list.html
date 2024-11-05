@@ -1,0 +1,25 @@
+{% extends "base2.html" %} {% block title %}ホーム{% endblock %} {% block
+content %}
+<div class="container">
+  <h1>登録済み生徒一覧</h1>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th>名前</th>
+        <th>ユーザーネーム</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for student in students %}
+      <tr>
+        <td>{{ student.name }}</td>
+        <td>{{ student.username }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <a href="{{ url_for('teacher_dashboard') }}">生徒検索に戻る</a>
+</div>
+{% endblock %}

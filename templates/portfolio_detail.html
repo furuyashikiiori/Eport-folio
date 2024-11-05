@@ -1,28 +1,40 @@
 {% extends "base.html" %} {% block title %}ホーム{% endblock %} {% block content
 %}
 <div class="container">
-  <h1>{{ portfolio.title }}</h1>
-  <p><strong>Created at:</strong> {{ portfolio.created_at }}</p>
-  <div>{{ portfolio.content }}</div>
+  <div class="portfolio-container">
+    <h1>{{ portfolio.title }}</h1>
+    <p><strong>作成日:</strong> {{ portfolio.created_at }}</p>
+    <div class="portfolio-container-content">{{ portfolio.content }}</div>
+  </div>
 
-  <h2>Comments and Ratings</h2>
-  <form
-    method="POST"
-    action="{{ url_for('show_portfolio_with_comment', portfolio_id=portfolio.id) }}"
-  >
-    {{ form.hidden_tag() }} {{ form.comment.label }} {{ form.comment() }} {{
-    form.rating.label }} {{ form.rating() }} {{ form.submit() }}
-  </form>
+  <!-- 編集機能 -->
+  {% if session['user_id'] == portfolio.user_id %}
+  <div>
+    <a
+      class="portfolio_edit"
+      href="{{ url_for('edit_portfolio', portfolio_id=portfolio.id) }}"
+      >編集</a
+    >
+    <a
+      class="portfolio_delete"
+      href="{{ url_for('delete_portfolio', portfolio_id=portfolio.id) }}"
+      onclick="return confirm('本当にこのポートフォリオを削除しますか？');"
+      >削除</a
+    >
+  </div>
+  {% endif %}
+
+  <h2>コメントと評価</h2>
 
   <ul>
     {% for comment in comments %}
     <li>
-      <strong>Rating:</strong> {{ comment['rating'] }} <br />
+      <strong>評価:</strong> {{ comment['rating'] }} <br />
       {{ comment['comment'] }}
     </li>
     {% endfor %}
   </ul>
 
-  <a href="{{ url_for('portfolio') }}">Back to Portfolio List</a>
+  <a href="{{ url_for('portfolio') }}">ポートフォリオ一覧に戻る</a>
 </div>
 {% endblock %}

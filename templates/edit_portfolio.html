@@ -1,0 +1,22 @@
+l {% extends "base.html" %} {% block title %}登録{% endblock %} {% block content
+%}
+<div class="container">
+  <h1>ポートフォリオの編集</h1>
+  <form method="POST">
+    <div>
+      <label for="title">タイトル</label>
+      <input type="text" name="title" value="{{ portfolio['title'] }}" />
+    </div>
+    <div>
+      <label for="content">概要</label>
+      <textarea name="content">{{ portfolio['content'] }}</textarea>
+    </div>
+    <button type="submit">更新する</button>
+  </form>
+  <a
+    href="{{ url_for('show_portfolio_with_comment', portfolio_id=portfolio['id']) }}"
+    >>ポートフォリオに戻る</a
+  >
+</div>
+
+{% endblock %}
