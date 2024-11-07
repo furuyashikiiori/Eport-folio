@@ -1,0 +1,24 @@
+{% extends "base2.html" %} {% block title %}ホーム{% endblock %} {% block
+content %}
+<div>
+  <h1>タグでポートフォリオ検索</h1>
+  <form method="POST">
+    <select name="tag_id">
+      {% for tag in tags %}
+      <option value="{{ tag['id'] }}">{{ tag['name'] }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit">Search</button>
+  </form>
+  <ul>
+    {% for portfolio in portfolios %}
+    <li>
+      <a
+        href="{{ url_for('view_portfolio_by_tag', portfolio_id=portfolio['id']) }}"
+        >{{ portfolio['title'] }}</a
+      >
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

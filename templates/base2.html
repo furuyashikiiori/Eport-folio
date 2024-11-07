@@ -27,9 +27,13 @@
             <li><a href="{{ url_for('login') }}">ログイン</a></li>
             {% else %}
             <li>
-              <a href="{{ url_for('teacher_dashboard') }}">ダッシュボード</a>
+              <a href="{{ url_for('teacher_dashboard') }}"
+                >ユーザーネーム検索</a
+              >
             </li>
+            <li><a href="{{ url_for('search_by_tag') }}">タグ検索</a></li>
             <li><a href="{{ url_for('students_list') }}">生徒一覧</a></li>
+            <li><a href="{{ url_for('manage_tags') }}">タグ編集</a></li>
             <li><a href="{{ url_for('logout') }}">ログアウト</a></li>
             {% endif %}
           </ul>

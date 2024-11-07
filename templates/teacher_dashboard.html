@@ -4,8 +4,10 @@ content %}
   <h1>生徒検索</h1>
   <p>ユーザーネームを入力してください</p>
   <form method="POST" action="{{ url_for('teacher_dashboard') }}">
-    {{ form.hidden_tag() }} {{ form.search_query.label }} {{ form.search_query()
-    }} {{ form.submit() }}
+    {{ form.hidden_tag() }}
+    <div>{{ form.search_query.label }} {{ form.search_query() }}</div>
+    <!-- <div>{{ form.tags.label }} {{ form.tags() }}</div> -->
+    <div>{{ form.submit() }}</div>
   </form>
   <ul>
     {% for student in students %}

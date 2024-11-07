@@ -51,6 +51,23 @@ def create_tables():
             FOREIGN KEY (teacher_id) REFERENCES user (id)
         )
     ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS tags (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE
+        )
+    ''')
+
+    # ポートフォリオとタグの関係を保存するテーブル
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS portfolio_tags (
+            portfolio_id INTEGER,
+            tag_id INTEGER,
+            FOREIGN KEY (portfolio_id) REFERENCES portfolio (id),
+            FOREIGN KEY (tag_id) REFERENCES tags (id),
+            PRIMARY KEY (portfolio_id, tag_id)
+        )
+    ''')
     conn.commit()
     conn.close()
 
@@ -115,34 +132,76 @@ def logout():
     flash('You have been logged out.', 'info')
     return redirect(url_for('index'))
 
-@app.route('/portfolio', methods=['GET', 'POST']) # 1つのポートフォリオを表示
+# @app.route('/portfolio', methods=['GET', 'POST']) # 1つのポートフォリオを表示
+# def portfolio():
+#     if 'user_id' not in session:
+#         flash('You need to be logged in to view this page.', 'danger')
+#         return redirect(url_for('login'))
+
+#     form = PortfolioForm()
+#     if form.validate_on_submit():
+#         title = form.title.data
+#         content = form.content.data
+
+#         conn = get_db_connection()
+#         cursor = conn.cursor()
+#         cursor.execute("INSERT INTO portfolio (user_id, title, content) VALUES (?, ?, ?)",
+#                        (session['user_id'], title, content))
+#         conn.commit()
+#         conn.close()
+
+#         flash('Portfolio entry added!', 'success')
+#         return redirect(url_for('portfolio'))
+
+#     conn = get_db_connection()
+#     cursor = conn.cursor()
+#     cursor.execute("SELECT * FROM portfolio WHERE user_id = ?", (session['user_id'],))
+#     portfolio_rows = cursor.fetchall()
+#     conn.close()
+
+#     portfolios = [Portfolio(row['id'], row['user_id'], row['title'], row['content'], row['created_at'])
+#                   for row in portfolio_rows]
+
+#     return render_template('portfolio.html', form=form, portfolios=portfolios)
+
+@app.route('/portfolio', methods=['GET', 'POST'])
 def portfolio():
     if 'user_id' not in session:
         flash('You need to be logged in to view this page.', 'danger')
         return redirect(url_for('login'))
 
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # フォームにタグの選択肢を追加
     form = PortfolioForm()
+    form.tags.choices = [(tag['id'], tag['name']) for tag in cursor.execute("SELECT * FROM tags").fetchall()]
+
     if form.validate_on_submit():
         title = form.title.data
         content = form.content.data
 
-        conn = get_db_connection()
-        cursor = conn.cursor()
+        # ポートフォリオの作成
         cursor.execute("INSERT INTO portfolio (user_id, title, content) VALUES (?, ?, ?)",
                        (session['user_id'], title, content))
+        portfolio_id = cursor.lastrowid
+
+        # 選択されたタグを保存
+        for tag_id in form.tags.data:
+            cursor.execute("INSERT INTO portfolio_tags (portfolio_id, tag_id) VALUES (?, ?)",
+                           (portfolio_id, tag_id))
+
         conn.commit()
         conn.close()
 
         flash('Portfolio entry added!', 'success')
         return redirect(url_for('portfolio'))
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
     cursor.execute("SELECT * FROM portfolio WHERE user_id = ?", (session['user_id'],))
     portfolio_rows = cursor.fetchall()
     conn.close()
 
-    portfolios = [Portfolio(row['id'], row['user_id'], row['title'], row['content'], row['created_at'])
+    portfolios = [Portfolio(row['id'], row['user_id'], row['title'], row['content'], row['created_at']) 
                   for row in portfolio_rows]
 
     return render_template('portfolio.html', form=form, portfolios=portfolios)
@@ -238,6 +297,46 @@ def teacher_dashboard():
 
     return render_template('teacher_dashboard.html', form=form, students=students)
 
+# @app.route('/teacher_dashboard', methods=['GET', 'POST'])
+# def teacher_dashboard():
+#     if 'user_id' not in session:
+#         flash('You need to be logged in to view this page.', 'danger')
+#         return redirect(url_for('login'))
+
+#     conn = get_db_connection()
+#     cursor = conn.cursor()
+
+#     form = SearchForm()
+#     form.tags.choices = [(tag['id'], tag['name']) for tag in cursor.execute("SELECT * FROM tags").fetchall()]
+
+#     students = []
+
+#     if form.validate_on_submit():
+#         search_query = form.search_query.data
+#         selected_tags = form.tags.data
+
+#         # 基本的なユーザーネーム検索
+#         cursor.execute("SELECT * FROM user WHERE username LIKE ?", ('%' + search_query + '%',))
+#         students = cursor.fetchall()
+
+#         # タグによる絞り込み
+#         if selected_tags:
+#             tag_placeholders = ','.join('?' for _ in selected_tags)
+#             query = f'''
+#                 SELECT DISTINCT u.*
+#                 FROM user u
+#                 JOIN portfolio p ON u.id = p.user_id
+#                 JOIN portfolio_tags pt ON p.id = pt.portfolio_id
+#                 WHERE pt.tag_id IN ({tag_placeholders})
+#                   AND u.username LIKE ?
+#             '''
+#             cursor.execute(query, (*selected_tags, '%' + search_query + '%'))
+#             students = cursor.fetchall()
+        
+#     conn.close()
+
+#     return render_template('teacher_dashboard.html', form=form, students=students)
+
 @app.route('/students_list') # 生徒一覧
 def students_list():
     if 'user_id' not in session or session.get('role') != 'teacher':
@@ -294,6 +393,14 @@ def show_portfolio_with_comment(portfolio_id):
         
     portfolio = Portfolio(portfolio_row['id'], portfolio_row['user_id'], portfolio_row['title'], portfolio_row['content'], portfolio_row['created_at'])
     
+    cursor.execute('''
+        SELECT tags.name
+        FROM tags
+        JOIN portfolio_tags ON tags.id = portfolio_tags.tag_id
+        WHERE portfolio_tags.portfolio_id = ?
+    ''', (portfolio_id,))
+    tags = cursor.fetchall()
+
     cursor.execute("SELECT * FROM comments WHERE portfolio_id = ?", (portfolio_id,))
     comments = cursor.fetchall()
     
@@ -314,7 +421,7 @@ def show_portfolio_with_comment(portfolio_id):
     else:
         template = 'portfolio_detail.html'
 
-    return render_template(template, portfolio=portfolio, comments=comments, form=form)
+    return render_template(template, portfolio=portfolio, comments=comments, tags=tags, form=form)
 
 @app.route('/portfolio/<int:portfolio_id>/edit', methods=['GET', 'POST']) # ポートフォリオ編集
 def edit_portfolio(portfolio_id):
@@ -366,5 +473,192 @@ def delete_portfolio(portfolio_id):
     flash('Portfolio has been deleted!', 'success')
     return redirect(url_for('portfolio'))
 
+# タグを管理するルート（教師専用）
+@app.route('/tags', methods=['GET', 'POST'])
+def manage_tags():
+    if 'user_id' not in session or session.get('role') != 'teacher':
+        flash('You need to be logged in as a teacher to manage tags.', 'danger')
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    if request.method == 'POST':
+        tag_name = request.form['tag_name']
+        cursor.execute("INSERT INTO tags (name) VALUES (?)", (tag_name,))
+        conn.commit()
+        flash('Tag added!', 'success')
+    
+    cursor.execute("SELECT * FROM tags")
+    tags = cursor.fetchall()
+    conn.close()
+
+    return render_template('manage_tags.html', tags=tags)
+
+# ポートフォリオにタグを追加するルート（生徒専用）
+@app.route('/portfolio/<int:portfolio_id>/tags', methods=['GET', 'POST'])
+def add_tags_to_portfolio(portfolio_id):
+    if 'user_id' not in session or session.get('role') != 'student':
+        flash('You need to be logged in as a student to add tags.', 'danger')
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    if request.method == 'POST':
+        selected_tags = request.form.getlist('tag_ids')
+        cursor.execute("DELETE FROM portfolio_tags WHERE portfolio_id = ?", (portfolio_id,))
+        for tag_id in selected_tags:
+            cursor.execute("INSERT INTO portfolio_tags (portfolio_id, tag_id) VALUES (?, ?)", (portfolio_id, tag_id))
+        conn.commit()
+        flash('Tags updated!', 'success')
+    
+    cursor.execute("SELECT * FROM tags")
+    tags = cursor.fetchall()
+    
+    cursor.execute("SELECT tag_id FROM portfolio_tags WHERE portfolio_id = ?", (portfolio_id,))
+    portfolio_tags = [tag['tag_id'] for tag in cursor.fetchall()]
+    conn.close()
+
+    return render_template('add_tags_to_portfolio.html', tags=tags, portfolio_tags=portfolio_tags)
+
+# タグによる検索のルート（教師専用）
+@app.route('/search_by_tag', methods=['GET', 'POST'])
+def search_by_tag():
+    if 'user_id' not in session or session.get('role') != 'teacher':
+        flash('You need to be logged in as a teacher to search by tags.', 'danger')
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    if request.method == 'POST':
+        selected_tag_id = request.form['tag_id']
+        cursor.execute('''
+            SELECT portfolio.* FROM portfolio
+            INNER JOIN portfolio_tags ON portfolio.id = portfolio_tags.portfolio_id
+            WHERE portfolio_tags.tag_id = ?
+        ''', (selected_tag_id,))
+        portfolios = cursor.fetchall()
+    else:
+        portfolios = []
+    
+    cursor.execute("SELECT * FROM tags")
+    tags = cursor.fetchall()
+    conn.close()
+    
+    return render_template('search_by_tag.html', portfolios=portfolios, tags=tags)
+
+# @app.route('/view_portfolio_by_tag/<int:portfolio_id>', methods=['GET', 'POST'])
+# def view_portfolio_by_tag(portfolio_id):
+#     if 'user_id' not in session:
+#         flash('You need to be logged in to view this page.', 'danger')
+#         return redirect(url_for('login'))
+
+#     conn = get_db_connection()
+#     cursor = conn.cursor()
+    
+#     cursor.execute("SELECT * FROM portfolio WHERE id = ?", (portfolio_id,))
+#     portfolio_row = cursor.fetchone()
+    
+#     if not portfolio_row:
+#         flash('Portfolio not found.', 'danger')
+#         conn.close()
+#         return redirect(url_for('search_by_tag'))
+        
+#     portfolio = {
+#         'id': portfolio_row['id'],
+#         'user_id': portfolio_row['user_id'],
+#         'title': portfolio_row['title'],
+#         'content': portfolio_row['content'],
+#         'created_at': portfolio_row['created_at']
+#     }
+    
+#     cursor.execute("SELECT * FROM comments WHERE portfolio_id = ?", (portfolio_id,))
+#     comments = cursor.fetchall()
+    
+#     form = CommentForm()
+#     if form.validate_on_submit():
+#         comment_text = form.comment.data
+#         rating = form.rating.data
+#         cursor.execute(
+#             "INSERT INTO comments (portfolio_id, teacher_id, comment, rating) VALUES (?, ?, ?, ?)",
+#             (portfolio_id, session['user_id'], comment_text, rating)
+#         )
+#         conn.commit()
+#         flash('Comment added!', 'success')
+#         return redirect(url_for('view_portfolio_by_tag', portfolio_id=portfolio_id))
+    
+#     conn.close()
+
+#     if session.get('role') == 'teacher':
+#         template = 'teacher_portfolio_detail.html'
+#     else:
+#         template = 'portfolio_detail.html'
+
+#     return render_template(template, portfolio=portfolio, comments=comments, form=form)
+
+@app.route('/view_portfolio_by_tag/<int:portfolio_id>', methods=['GET', 'POST'])
+def view_portfolio_by_tag(portfolio_id):
+    if 'user_id' not in session:
+        flash('You need to be logged in to view this page.', 'danger')
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT * FROM portfolio WHERE id = ?", (portfolio_id,))
+    portfolio_row = cursor.fetchone()
+    
+    if not portfolio_row:
+        flash('Portfolio not found.', 'danger')
+        conn.close()
+        return redirect(url_for('search_by_tag'))
+        
+    portfolio = {
+        'id': portfolio_row['id'],
+        'user_id': portfolio_row['user_id'],
+        'title': portfolio_row['title'],
+        'content': portfolio_row['content'],
+        'created_at': portfolio_row['created_at']
+    }
+
+    cursor.execute('''
+        SELECT tags.name
+        FROM tags
+        JOIN portfolio_tags ON tags.id = portfolio_tags.tag_id
+        WHERE portfolio_tags.portfolio_id = ?
+    ''', (portfolio_id,))
+    tags = cursor.fetchall()
+
+    print(tags)  # デバッグ出力
+
+    cursor.execute("SELECT * FROM comments WHERE portfolio_id = ?", (portfolio_id,))
+    comments = cursor.fetchall()
+    
+    form = CommentForm()
+    if form.validate_on_submit():
+        comment_text = form.comment.data
+        rating = form.rating.data
+        cursor.execute(
+            "INSERT INTO comments (portfolio_id, teacher_id, comment, rating) VALUES (?, ?, ?, ?)",
+            (portfolio_id, session['user_id'], comment_text, rating)
+        )
+        conn.commit()
+        flash('Comment added!', 'success')
+        return redirect(url_for('view_portfolio_by_tag', portfolio_id=portfolio_id))
+    
+    conn.close()
+
+    if session.get('role') == 'teacher':
+        template = 'teacher_portfolio_detail.html'
+    else:
+        template = 'portfolio_detail.html'
+
+    return render_template(template, portfolio=portfolio, comments=comments, form=form, tags=tags)
+
+# if __name__ == '__main__':
+#     app.run(debug=True, host='127.0.0.1')  # ポートオプション-デフォルトの5000を使用
+
 if __name__ == '__main__':
-    app.run(debug=True, host='127.0.0.1')  # ポートオプション-デフォルトの5000を使用
+    app.run(host='0.0.0.0', port=5003)  # ここでポート番号を変更
