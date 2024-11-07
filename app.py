@@ -61,7 +61,7 @@ create_tables()
 def index():
     return render_template('index.html')
 
-@app.route('/register', methods=['GET', 'POST'])
+@app.route('/register', methods=['GET', 'POST']) # ユーザー登録
 def register():
     form = RegistrationForm()
     if form.validate_on_submit():
@@ -81,30 +81,7 @@ def register():
         return redirect(url_for('login'))
     return render_template('register.html', form=form)
 
-# @app.route('/login', methods=['GET', 'POST'])
-# def login():
-#     form = LoginForm()
-#     if form.validate_on_submit():
-#         username = form.username.data
-#         password = form.password.data
-
-#         conn = get_db_connection()
-#         cursor = conn.cursor()
-#         cursor.execute("SELECT * FROM user WHERE username = ?", (username,))
-#         user_row = cursor.fetchone()
-#         conn.close()
-
-#         if user_row and check_password_hash(user_row['password'], password):
-#             user = User(user_row['id'], user_row['username'], user_row['password'], user_row['role'])
-#             session['user_id'] = user.id
-#             session['role'] = user.role
-#             flash('Login successful!', 'success')
-#             return redirect(url_for('index'))
-#         else:
-#             flash('Login failed. Check your username and/or password.', 'danger')
-#     return render_template('login.html', form=form)
-
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/login', methods=['GET', 'POST']) # ログイン
 def login():
     form = LoginForm()
     if form.validate_on_submit():
@@ -132,13 +109,13 @@ def login():
 
     return render_template('login.html', form=form)
 
-@app.route('/logout')
+@app.route('/logout') # ログアウト
 def logout():
     session.clear()
     flash('You have been logged out.', 'info')
     return redirect(url_for('index'))
 
-@app.route('/portfolio', methods=['GET', 'POST'])
+@app.route('/portfolio', methods=['GET', 'POST']) # 1つのポートフォリオを表示
 def portfolio():
     if 'user_id' not in session:
         flash('You need to be logged in to view this page.', 'danger')
@@ -170,27 +147,7 @@ def portfolio():
 
     return render_template('portfolio.html', form=form, portfolios=portfolios)
 
-
-# @app.route('/portfolio/<int:portfolio_id>')
-# def show_portfolio(portfolio_id):
-#     if 'user_id' not in session:
-#         flash('You need to be logged in to view this page.', 'danger')
-#         return redirect(url_for('login'))
-
-#     conn = get_db_connection()
-#     cursor = conn.cursor()
-#     cursor.execute("SELECT * FROM portfolio WHERE id = ?", (portfolio_id,))
-#     portfolio_row = cursor.fetchone()
-#     conn.close()
-
-#     if portfolio_row:
-#         portfolio = Portfolio(portfolio_row['id'], portfolio_row['user_id'], portfolio_row['title'], portfolio_row['content'], portfolio_row['created_at'])
-#         return render_template('portfolio_detail.html', portfolio=portfolio)
-#     else:
-#         flash('Portfolio not found.', 'danger')
-#         return redirect(url_for('portfolio'))
-
-@app.route('/profile')
+@app.route('/profile') # プロフィール
 def profile():
     if 'user_id' not in session:
         flash('You need to be logged in to view this page.', 'danger')
@@ -214,7 +171,7 @@ def profile():
         flash('User not found.', 'danger')
         return redirect(url_for('index'))
 
-@app.route('/edit_profile', methods=['GET', 'POST'])
+@app.route('/edit_profile', methods=['GET', 'POST']) # プロフィール編集
 def edit_profile():
     if 'user_id' not in session:
         flash('You need to be logged in to view this page.', 'danger')
@@ -262,7 +219,7 @@ def edit_profile():
         flash('User not found.', 'danger')
         return redirect(url_for('profile'))
     
-@app.route('/teacher_dashboard', methods=['GET', 'POST'])
+@app.route('/teacher_dashboard', methods=['GET', 'POST']) # 教師ダッシュボード
 def teacher_dashboard():
     if 'user_id' not in session or session.get('role') != 'teacher':
         flash('You need to be logged in as a teacher to view this page.', 'danger')
@@ -281,7 +238,7 @@ def teacher_dashboard():
 
     return render_template('teacher_dashboard.html', form=form, students=students)
 
-@app.route('/students_list')
+@app.route('/students_list') # 生徒一覧
 def students_list():
     if 'user_id' not in session or session.get('role') != 'teacher':
         flash('You need to be logged in as a teacher to view this page.', 'danger')
@@ -295,30 +252,7 @@ def students_list():
 
     return render_template('students_list.html', students=students)
 
-# @app.route('/view_portfolio/<int:student_id>')
-# def view_portfolio(student_id):
-#     if 'user_id' not in session or session.get('role') != 'teacher':
-#         flash('You need to be logged in as a teacher to view this page.', 'danger')
-#         return redirect(url_for('login'))
-
-#     conn = get_db_connection()
-#     cursor = conn.cursor()
-#     cursor.execute("SELECT * FROM user WHERE id = ?", (student_id,))
-#     student = cursor.fetchone()
-
-#     if not student:
-#         flash('Student not found.', 'danger')
-#         return redirect(url_for('teacher_dashboard'))
-
-#     cursor.execute("SELECT * FROM portfolio WHERE user_id = ?", (student_id,))
-#     portfolio_rows = cursor.fetchall()
-#     conn.close()
-
-#     portfolios = [Portfolio(row['id'], row['user_id'], row['title'], row['content'], row['created_at'])
-#                   for row in portfolio_rows]
-
-#     return render_template('view_portfolio.html', student=student, portfolios=portfolios)
-@app.route('/view_portfolio/<int:student_id>')
+@app.route('/view_portfolio/<int:student_id>') # ポートフォリオ一覧
 def view_portfolio(student_id):
     if 'user_id' not in session or session.get('role') != 'teacher':
         flash('You need to be logged in as a teacher to view this page.', 'danger')
@@ -342,42 +276,7 @@ def view_portfolio(student_id):
 
     return render_template('view_portfolio.html', student=student, portfolios=portfolios)
 
-# @app.route('/portfolio/<int:portfolio_id>', methods=['GET', 'POST'])
-# def show_portfolio_with_comment(portfolio_id):
-#     if 'user_id' not in session:
-#         flash('You need to be logged in to view this page.', 'danger')
-#         return redirect(url_for('login'))
-
-#     conn = get_db_connection()
-#     cursor = conn.cursor()
-#     cursor.execute("SELECT * FROM portfolio WHERE id = ?", (portfolio_id,))
-#     portfolio_row = cursor.fetchone()
-    
-#     if not portfolio_row:
-#         flash('Portfolio not found.', 'danger')
-#         conn.close()
-#         return redirect(url_for('portfolio'))
-        
-#     portfolio = Portfolio(portfolio_row['id'], portfolio_row['user_id'], portfolio_row['title'], portfolio_row['content'], portfolio_row['created_at'])
-    
-#     cursor.execute("SELECT * FROM comments WHERE portfolio_id = ?", (portfolio_id,))
-#     comments = cursor.fetchall()
-    
-#     form = CommentForm()
-#     if form.validate_on_submit():
-#         comment_text = form.comment.data
-#         rating = form.rating.data
-#         cursor.execute("INSERT INTO comments (portfolio_id, teacher_id, comment, rating) VALUES (?, ?, ?, ?)",
-#                        (portfolio_id, session['user_id'], comment_text, rating))
-#         conn.commit()
-#         flash('Comment added!', 'success')
-#         return redirect(url_for('show_portfolio_with_comment', portfolio_id=portfolio_id))
-    
-#     conn.close()
-
-#     return render_template('portfolio_detail.html', portfolio=portfolio, comments=comments, form=form)
-
-@app.route('/portfolio/<int:portfolio_id>', methods=['GET', 'POST'])
+@app.route('/portfolio/<int:portfolio_id>', methods=['GET', 'POST']) # ポートフォリオ詳細
 def show_portfolio_with_comment(portfolio_id):
     if 'user_id' not in session:
         flash('You need to be logged in to view this page.', 'danger')
@@ -417,7 +316,7 @@ def show_portfolio_with_comment(portfolio_id):
 
     return render_template(template, portfolio=portfolio, comments=comments, form=form)
 
-@app.route('/portfolio/<int:portfolio_id>/edit', methods=['GET', 'POST'])
+@app.route('/portfolio/<int:portfolio_id>/edit', methods=['GET', 'POST']) # ポートフォリオ編集
 def edit_portfolio(portfolio_id):
     if 'user_id' not in session:
         flash('You need to be logged in to edit a portfolio.', 'danger')
@@ -445,7 +344,7 @@ def edit_portfolio(portfolio_id):
     conn.close()
     return render_template('edit_portfolio.html', portfolio=portfolio_row)
 
-@app.route('/portfolio/<int:portfolio_id>/delete')
+@app.route('/portfolio/<int:portfolio_id>/delete') # ポートフォリオ削除
 def delete_portfolio(portfolio_id):
     if 'user_id' not in session:
         flash('You need to be logged in to delete a portfolio.', 'danger')
@@ -468,4 +367,4 @@ def delete_portfolio(portfolio_id):
     return redirect(url_for('portfolio'))
 
 if __name__ == '__main__':
-    app.run(debug=True, host='127.0.0.1')  # ポートオプションもデフォルトの5000を使用
+    app.run(debug=True, host='127.0.0.1')  # ポートオプション-デフォルトの5000を使用
