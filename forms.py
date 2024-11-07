@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, TextAreaField, SelectField
+from wtforms import StringField, PasswordField, SubmitField, TextAreaField, SelectField, SelectMultipleField
 from wtforms.validators import DataRequired, Length
 
 class RegistrationForm(FlaskForm):
@@ -16,6 +16,7 @@ class LoginForm(FlaskForm):
 class PortfolioForm(FlaskForm):
     title = StringField('タイトル', validators=[DataRequired(), Length(max=128)])
     content = TextAreaField('概要', validators=[DataRequired()])
+    tags = SelectMultipleField('タグ', coerce=int)
     submit = SubmitField('保存')
 
 class ProfileEditForm(FlaskForm):
@@ -28,6 +29,7 @@ class ProfileEditForm(FlaskForm):
 
 class SearchForm(FlaskForm):
     search_query = StringField('username', validators=[DataRequired()])
+    tags = SelectMultipleField('Tags', coerce=int)
     submit = SubmitField('検索')
 
 class CommentForm(FlaskForm):
